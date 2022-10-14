@@ -1,17 +1,56 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import * as ReactDOMClient from "react-dom/client";
+import { Provider } from "react-redux";
+import {
+  legacy_createStore as createStore,
+  applyMiddleware,
+  compose,
+} from "redux";
+import thunk from "redux-thunk";
+import Reddit from "./Reddit";
+import { getPosts } from "./actions";
+import "./index.css";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+const initialState = {
+  posts: [],
+  isLoading: false,
+  error: null,
+};
+
+function reducer(state = initialState, action) {
+  switch (action.type) {
+    case "GET_POSTS_BEGIN":
+      return {
+        ...state,
+        isLoading: true,
+      };
+    case "GET_POSTS_SUCCESS":
+      return {
+        ...state,
+        posts: action.posts,
+        isLoading: false,
+      };
+    case "GET_POSTS_ERROR":
+      return {
+        ...state,
+        isLoading: false,
+        error: action.error,
+      };
+    default:
+      return state;
+  }
+}
+
+const composedEnhancer = compose(
+  applyMiddleware(thunk),
+  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 );
+const store = createStore(reducer, composedEnhancer);
+store.dispatch({ type: "FOO" });
+store.dispatch(getPosts());
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+const root = ReactDOMClient.createRoot(document.getElementById("root"));
+root.render(
+  <Provider store={store}>
+    <Reddit />
+  </Provider>
+);
